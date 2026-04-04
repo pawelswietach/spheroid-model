@@ -1,35 +1,40 @@
+# steady_state_model_fixed.py
+# (same content as before)
 
 import numpy as np
 from scipy.optimize import least_squares
 
+def _parse_nhe(nhe):
+    if isinstance(nhe, str):
+        key = nhe.strip().lower()
+        if key in {"yes","y","true","1","on"}:
+            return 1.0
+        if key in {"no","n","false","0","off"}:
+            return 0.0
+        raise ValueError(f"Unrecognized NHE value: {nhe}")
+    return float(nhe)
 
 def jac_sparsity(n_points, n_vars=10):
     N = n_points * n_vars
     S = np.zeros((N, N), dtype=bool)
-
     for i in range(n_points):
         for j in range(n_vars):
             idx = i*n_vars + j
             S[idx, idx] = True
-
             if i > 0:
                 S[idx, (i-1)*n_vars:(i)*n_vars] = True
             if i < n_points-1:
                 S[idx, (i+1)*n_vars:(i+2)*n_vars] = True
-
     return S
 
-
 class SteadyStateModel:
-
     def __init__(self, R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, n_points=60):
-
         self.R = R
         self.RR = RR
         self.GR = GR
         self.ve = ve
         self.vi = 1 - ve
-        self.NHE = float(NHE)
+        self.NHE = _parse_nhe(NHE)
 
         self.n = n_points
         self.x = np.linspace(0, R, n_points)
@@ -50,7 +55,6 @@ class SteadyStateModel:
 
         self.Km = 1e-6
         self.Kg = 1e-3
-
         self.Href = 10**-7.2
         self.Knhe = 10**-6.5
 
@@ -77,7 +81,6 @@ class SteadyStateModel:
         return U.ravel()
 
     def residual(self, y):
-
         U = y.reshape(self.n, 10)
         U[-1,:7] = self.c_blood
 
@@ -110,12 +113,10 @@ class SteadyStateModel:
         s[:,9] = -self.vi*r_HLaci
 
         U_pad = np.pad(U, ((1,1),(0,0)), mode='edge')
-
         d2 = (U_pad[2:] - 2*U + U_pad[:-2]) / self.dx**2
         d1 = (U_pad[2:] - U_pad[:-2]) / (2*self.dx)
 
         dU = self.D * (d2 + self.inv_r[:,None]*d1)
-
         dU[0,:] = self.D * (3*(U[1,:]-U[0,:]) / self.dx**2)
         dU[-1,:] = 0
 
@@ -128,9 +129,7 @@ class SteadyStateModel:
         return F.ravel()
 
     def solve(self):
-
         S = jac_sparsity(self.n)
-
         sol = least_squares(
             self.residual,
             self.initial_guess(),
@@ -157,7 +156,6 @@ class SteadyStateModel:
             "Laci_mM": 1000*U[:,9],
             "success": sol.success
         }
-
 
 def diffusion_steady_state(**kwargs):
     return SteadyStateModel(**kwargs).solve()

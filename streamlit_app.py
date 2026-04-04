@@ -1,8 +1,9 @@
+# streamlit_app_fixed.py
 
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from steady_state_model import diffusion_steady_state
+from steady_state_model_fixed import diffusion_steady_state
 
 st.set_page_config(layout="wide")
 
