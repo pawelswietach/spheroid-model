@@ -32,7 +32,7 @@ startGlucose = st.sidebar.number_input("Bath [Glucose] (mM)", value=5.0)
 
 NHE = st.sidebar.radio("NHE activity", ["yes","no"])
 
-n_points = st.sidebar.number_input("Mesh points", value=50)
+n_points = st.sidebar.number_input("Mesh points", value=20)
 
 if st.button("Solve"):
 
