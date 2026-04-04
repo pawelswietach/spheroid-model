@@ -63,7 +63,12 @@ if st.button("Solve"):
     axs[1,2].plot(depth,out["Lace_mM"],'r'); axs[1,2].plot(depth,out["Laci_mM"],'b')
     axs[1,2].set_title("Lactate")
 
-    axs[1,3].plot(out["O2_mM"],out["pHe"]); axs[1,3].plot(out["O2_mM"],out["pHi"])
+    axs[1,3].plot(out["O2_mM"],out["pHe"],'r'); axs[1,3].plot(out["O2_mM"],out["pHi"],'b')
     axs[1,3].set_title("pH vs O2")
+    axs[1,3].set_xlabel("O2 (mM)")
+
+    for i, ax in enumerate(axs.flat):
+        if i != 7:
+            ax.set_xlabel("Radial depth (um)")
 
     st.pyplot(fig)
