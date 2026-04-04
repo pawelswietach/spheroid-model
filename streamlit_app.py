@@ -2,15 +2,17 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from steady_state_model import diffusion_pdepe_profiles_python
+from steady_state_model import diffusion_solver
 
 st.set_page_config(layout="wide")
 
-col1, col2, col3 = st.columns([1,2,1])
-with col2:
+# --- Image (half width, left aligned) ---
+col1, col2 = st.columns([1,1])
+with col1:
     st.image("image.png")
 
-st.title("Cancer spheroid steady-state diffusion model")
+# --- Title and subtitle ---
+st.title("Cancer spheroid diffusion-reaction model for pH and oxygen dynamics")
 
 st.markdown(
     '[Using Mathematical Modeling of Tumor Metabolism to Predict the Magnitude, Composition, and Hypoxic Interactions of Microenvironment Acidosis](https://onlinelibrary.wiley.com/doi/10.1002/bies.70101)'
@@ -18,35 +20,29 @@ st.markdown(
 
 st.sidebar.header("Inputs")
 
-R = st.sidebar.number_input("Spheroid radius (um):", value=100.0)
-RR = st.sidebar.number_input("Respiratory rate (mM/min):", value=1.0)
-GR = st.sidebar.number_input("Glycolytic rate (mM/min):", value=1.0)
-ve = st.sidebar.number_input("Extracellular volume fraction", value=0.2)
+R = st.sidebar.number_input("Radius", value=100.0)
+RR = st.sidebar.number_input("Resp rate", value=1.0)
+GR = st.sidebar.number_input("Glycolysis", value=1.0)
+ve = st.sidebar.number_input("ve", value=0.2)
 
-startO2 = st.sidebar.number_input("Bath O2 (mM)", value=0.13)
-startCO2 = st.sidebar.number_input("Bath CO2 (mM)", value=1.2)
-startHCO3 = st.sidebar.number_input("Bath HCO3 (mM)", value=24.0)
-startGlucose = st.sidebar.number_input("Bath Glucose (mM)", value=5.0)
+startO2 = st.sidebar.number_input("O2", value=0.13)
+startCO2 = st.sidebar.number_input("CO2", value=1.2)
+startHCO3 = st.sidebar.number_input("HCO3", value=24.0)
+startGlucose = st.sidebar.number_input("Glucose", value=5.0)
 
-NHE = st.sidebar.radio("NHE", ["yes", "no"])
+NHE = st.sidebar.radio("NHE", ["yes","no"])
 
-n_points = st.sidebar.number_input("Radial mesh points", value=300)
-t_hours = st.sidebar.number_input("Simulation time (hours)", value=5.0)
+n_points = st.sidebar.number_input("Mesh points", value=50)
 
 if st.button("Solve"):
 
-    out = diffusion_pdepe_profiles_python(
-        R=R, RR=RR, GR=GR, ve=ve,
-        startO2=startO2, startCO2=startCO2,
-        startHCO3=startHCO3, startGlucose=startGlucose,
-        NHE=NHE, n_points=int(n_points), t_final_s=t_hours*3600
+    out = diffusion_solver(
+        R=R,RR=RR,GR=GR,ve=ve,
+        startO2=startO2,startCO2=startCO2,
+        startHCO3=startHCO3,startGlucose=startGlucose,
+        NHE=NHE,
+        n_points=int(n_points)
     )
-
-    solver_success = "yes" if out is not None else "unknown"
-    converged = out.get("converged", "unknown")
-
-    st.write(f"Solver success: {solver_success}")
-    st.write(f"Converged: {converged}")
 
     x = out["x_um"]
     depth = R - x
@@ -65,44 +61,30 @@ if st.button("Solve"):
         "Laci": out["Laci_mM"],
     })
 
-    st.subheader("Profiles")
+    fig, axs = plt.subplots(2,4,figsize=(18,10))
 
-    fig, axs = plt.subplots(2, 4, figsize=(18, 10))
+    axs[0,0].plot(depth,out["O2_mM"]); axs[0,0].set_title("O2")
+    axs[0,1].plot(depth,out["Glu_mM"]); axs[0,1].set_title("Glucose")
+    axs[0,2].plot(depth,out["CO2_mM"]); axs[0,2].set_title("CO2")
+    axs[0,3].plot(depth,out["HLac_mM"]); axs[0,3].set_title("Lactic acid")
 
-    axs[0,0].plot(depth, df["O2"], color="black")
-    axs[0,0].set_title("O2")
-
-    axs[0,1].plot(depth, df["Glucose"], color="black")
-    axs[0,1].set_title("Glucose")
-
-    axs[0,2].plot(depth, df["CO2"], color="black")
-    axs[0,2].set_title("CO2")
-
-    axs[0,3].plot(depth, df["Lactic acid"], color="black")
-    axs[0,3].set_title("Lactic acid")
-
-    axs[1,0].plot(depth, df["HCO3e"], color="red", label="HCO3e")
-    axs[1,0].plot(depth, df["HCO3i"], color="blue", label="HCO3i")
+    axs[1,0].plot(depth,out["HCO3e_mM"],'r'); axs[1,0].plot(depth,out["HCO3i_mM"],'b')
     axs[1,0].set_title("Bicarbonate")
-    axs[1,0].legend()
 
-    axs[1,1].plot(depth, df["pHe"], color="red", label="pHe")
-    axs[1,1].plot(depth, df["pHi"], color="blue", label="pHi")
+    axs[1,1].plot(depth,out["pHe"],'r'); axs[1,1].plot(depth,out["pHi"],'b')
     axs[1,1].set_title("pH")
-    axs[1,1].legend()
 
-    axs[1,2].plot(depth, df["Lace"], color="red", label="Lace")
-    axs[1,2].plot(depth, df["Laci"], color="blue", label="Laci")
+    axs[1,2].plot(depth,out["Lace_mM"],'r'); axs[1,2].plot(depth,out["Laci_mM"],'b')
     axs[1,2].set_title("Lactate")
-    axs[1,2].legend()
 
-    axs[1,3].plot(df["O2"], df["pHe"], color="black")
-    axs[1,3].set_title("pHe vs O2")
+    axs[1,3].plot(out["O2_mM"],out["pHe"],'r'); axs[1,3].plot(out["O2_mM"],out["pHi"],'b')
+    axs[1,3].set_title("pH vs O2")
     axs[1,3].set_xlabel("O2 (mM)")
 
     for i, ax in enumerate(axs.flat):
         if i != 7:
             ax.set_xlabel("Radial depth (um)")
+
 
     plt.subplots_adjust(hspace=0.5)
 
