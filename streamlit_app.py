@@ -20,17 +20,17 @@ st.markdown(
 
 st.sidebar.header("Inputs")
 
-R = st.sidebar.number_input("Radius", value=100.0)
-RR = st.sidebar.number_input("Resp rate", value=1.0)
-GR = st.sidebar.number_input("Glycolysis", value=1.0)
-ve = st.sidebar.number_input("ve", value=0.2)
+R = st.sidebar.number_input("Radius (um)", value=100.0)
+RR = st.sidebar.number_input("Respiratory rate (mM/min)", value=1.0)
+GR = st.sidebar.number_input("Fermentative rate (mM/min)", value=1.0)
+ve = st.sidebar.number_input("Extracellular volume fraction", value=0.2)
 
-startO2 = st.sidebar.number_input("O2", value=0.13)
-startCO2 = st.sidebar.number_input("CO2", value=1.2)
-startHCO3 = st.sidebar.number_input("HCO3", value=24.0)
-startGlucose = st.sidebar.number_input("Glucose", value=5.0)
+startO2 = st.sidebar.number_input("Bath [O2] (mM)", value=0.13)
+startCO2 = st.sidebar.number_input("Bath [CO2] (mM)", value=1.2)
+startHCO3 = st.sidebar.number_input("Bath [HCO3-] (mM)", value=24.0)
+startGlucose = st.sidebar.number_input("Bath [Glucose] (mM)", value=5.0)
 
-NHE = st.sidebar.radio("NHE", ["yes","no"])
+NHE = st.sidebar.radio("NHE activity", ["yes","no"])
 
 n_points = st.sidebar.number_input("Mesh points", value=50)
 
