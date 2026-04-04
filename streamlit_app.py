@@ -63,10 +63,10 @@ if st.button("Solve"):
 
     fig, axs = plt.subplots(2,4,figsize=(18,10))
 
-    axs[0,0].plot(depth,out["O2_mM"]); axs[0,0].set_title("O2 (mM)")
-    axs[0,1].plot(depth,out["Glu_mM"]); axs[0,1].set_title("Glucose (mM)")
-    axs[0,2].plot(depth,out["CO2_mM"]); axs[0,2].set_title("CO2 (mM)")
-    axs[0,3].plot(depth,out["HLac_mM"]); axs[0,3].set_title("Lactic acid (mM)")
+    axs[0,0].plot(depth,out["O2_mM"],'k'); axs[0,0].set_title("O2 (mM)")
+    axs[0,1].plot(depth,out["Glu_mM"],'k'); axs[0,1].set_title("Glucose (mM)")
+    axs[0,2].plot(depth,out["CO2_mM"],'k'); axs[0,2].set_title("CO2 (mM)")
+    axs[0,3].plot(depth,out["HLac_mM"],'k'); axs[0,3].set_title("Lactic acid (mM)")
 
     axs[1,0].plot(depth,out["HCO3e_mM"],'r'); axs[1,0].plot(depth,out["HCO3i_mM"],'b')
     axs[1,0].set_title("Bicarbonate (mM)")
