@@ -11,7 +11,7 @@ def _parse_nhe(nhe):
 
 class Model:
 
-    def __init__(self, R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, n_points=80):
+    def __init__(self, R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, n_points=50):
 
         self.R = R
         self.ve = ve
@@ -109,6 +109,13 @@ class Model:
 
         return rhs.ravel()
 
+    def steady_event(self, t, y):
+        r = self.rhs(t, y)
+        return np.max(np.abs(r)) - 1e-6
+
+    steady_event.terminal = True
+    steady_event.direction = -1
+
     def solve(self):
 
         sol = solve_ivp(
@@ -118,7 +125,8 @@ class Model:
             method="BDF",
             rtol=1e-4,
             atol=1e-7,
-            max_step=200
+            max_step=200,
+            events=self.steady_event
         )
 
         U = sol.y[:,-1].reshape(len(self.x),10)

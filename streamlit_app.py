@@ -6,9 +6,19 @@ from steady_state_model import diffusion_solver
 
 st.set_page_config(layout="wide")
 
-st.image("image.png", use_container_width=True)
+# --- Image (half width, left aligned) ---
+col1, col2 = st.columns([1,1])
+with col1:
+    st.image("image.png")
 
-st.title("Cancer spheroid diffusion model")
+# --- Title and subtitle ---
+st.title("Cancer spheroid diffusion-reaction model for pH and oxygen dynamics")
+
+st.markdown(
+    '[Using Mathematical Modeling of Tumor Metabolism to Predict the Magnitude, Composition, and Hypoxic Interactions of Microenvironment Acidosis](https://onlinelibrary.wiley.com/doi/10.1002/bies.70101)'
+)
+
+st.sidebar.header("Inputs")
 
 R = st.sidebar.number_input("Radius", value=100.0)
 RR = st.sidebar.number_input("Resp rate", value=1.0)
@@ -22,13 +32,16 @@ startGlucose = st.sidebar.number_input("Glucose", value=5.0)
 
 NHE = st.sidebar.radio("NHE", ["yes","no"])
 
+n_points = st.sidebar.number_input("Mesh points", value=50)
+
 if st.button("Solve"):
 
     out = diffusion_solver(
         R=R,RR=RR,GR=GR,ve=ve,
         startO2=startO2,startCO2=startCO2,
         startHCO3=startHCO3,startGlucose=startGlucose,
-        NHE=NHE
+        NHE=NHE,
+        n_points=int(n_points)
     )
 
     x = out["x_um"]
