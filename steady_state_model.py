@@ -23,7 +23,6 @@ class SimulationResult:
     x_um: np.ndarray
     Uend_M: np.ndarray
     ATP_avg_Mps: float
-    converged: bool
     success: bool
 
     def profiles(self):
@@ -41,14 +40,13 @@ class SimulationResult:
             "pHi": -np.log10(np.clip(U[:,8],1e-30,None)),
             "Laci_mM": 1000*U[:,9],
             "ATP_avg_Mps": self.ATP_avg_Mps,
-            "converged": self.converged,
             "solver_success": self.success
         }
 
 
 class Model:
 
-    def __init__(self,R,RR,GR,ve,startO2,startCO2,startHCO3,startGlucose,NHE,n_points=100):
+    def __init__(self,R,RR,GR,ve,startO2,startCO2,startHCO3,startGlucose,NHE,n_points=80):
 
         self.R=R
         self.RR=RR
@@ -56,10 +54,13 @@ class Model:
         self.ve=ve
         self.vi=1-ve
         self.NHE=_parse_nhe(NHE)
-        self.CA=300
+        self.CA=100  # corrected
 
         self.x=np.linspace(0,R,n_points)
         self.dx=self.x[1]-self.x[0]
+
+        self.inv_r = np.zeros_like(self.x)
+        self.inv_r[1:] = 2/self.x[1:]
 
         D_free=np.array([2600,2100,1300,10,1000,1000,960,0,0,0])
         self.D=np.concatenate([D_free[:2], D_free[2:]*self.ve])
@@ -74,6 +75,9 @@ class Model:
         self.kf=1e6
         self.kb=self.kf/(10**-3.9)
 
+        self.JR_const = (RR/1000)/60
+        self.JG_const = (GR/1000)/60
+
         startO2/=1000
         startCO2/=1000
         startHCO3/=1000
@@ -85,40 +89,17 @@ class Model:
             startO2,startCO2,startHCO3,He_blood,0,0,startGlucose
         ])
 
-    def JR(self): return (self.RR/1000)/60
-    def JG(self): return (self.GR/1000)/60
-
     def initial(self):
-        base = np.concatenate([self.c_blood,[0,10**-7.2,0]])
+        HCO3i = self.c_blood[1] * 10**(7.2 - 6.1)
+        base = np.concatenate([self.c_blood,[HCO3i,10**-7.2,0]])
         U = np.tile(base,(len(self.x),1))
-
-        # enforce boundary at r = R
         U[-1,:7] = self.c_blood
-
         return U.ravel()
-
-    def diffusion(self,u,D):
-        du=np.zeros_like(u)
-
-        # center symmetry
-        du[0]=D*(3*(u[1]-u[0])/self.dx**2)
-
-        r=self.x[1:-1]
-
-        du[1:-1]=D*(
-            (u[2:]-2*u[1:-1]+u[:-2])/self.dx**2 +
-            (2/r)*(u[2:]-u[:-2])/(2*self.dx)
-        )
-
-        du[-1]=0
-
-        return du
 
     def rhs(self,t,y):
 
-        U=y.reshape(len(self.x),10)
-
-        # enforce boundary
+        n = len(self.x)
+        U=y.reshape(n,10)
         U[-1,:7]=self.c_blood
 
         O2,CO2,HCO3e,He,Lace,HLac,Glu,HCO3i,Hi,Laci=U.T
@@ -128,8 +109,8 @@ class Model:
         r_HLace=self.kb*Lace*He-self.kf*HLac
         r_HLaci=self.kb*Laci*Hi-self.kf*HLac
 
-        JR=self.JR()*Glu/(Glu+self.Kg)*O2/(O2+self.Km)
-        JG=self.JG()*Glu/(Glu+self.Kg)
+        JR=self.JR_const*Glu/(Glu+self.Kg)*O2/(O2+self.Km)
+        JG=self.JG_const*Glu/(Glu+self.Kg)
 
         Jnhe=(self.NHE/1000/60)*(
             (Hi**2/(Hi**2+self.Knhe**2)) -
@@ -149,35 +130,29 @@ class Model:
         s[:,8]=self.vi*(-r_CO2i-r_HLaci-Jnhe)
         s[:,9]=-self.vi*r_HLaci
 
-        dU=np.zeros_like(U)
-        for j in range(10):
-            dU[:,j]=self.diffusion(U[:,j],self.D[j])
+        U_pad = np.pad(U, ((1,1),(0,0)), mode='edge')
+        d2 = (U_pad[2:] - 2*U + U_pad[:-2]) / self.dx**2
+        d1 = (U_pad[2:] - U_pad[:-2]) / (2*self.dx)
+
+        dU = self.D * (d2 + self.inv_r[:,None]*d1)
+        dU[0,:] = self.D * (3*(U[1,:]-U[0,:]) / self.dx**2)
+        dU[-1,:] = 0
 
         c_vec=np.array([1,1,self.ve,self.ve,self.ve,1,1,self.vi,self.vi,self.vi])
-
         rhs=(s+dU)/c_vec
-
         rhs[-1,:7]=0
 
         return rhs.ravel()
 
     def solve(self):
-
-        def event(t,y):
-            return np.max(np.abs(self.rhs(t,y))) - 1e-9
-
-        event.terminal=True
-        event.direction=-1
-
         sol=solve_ivp(
             self.rhs,
-            (0,3*3600),
+            (0,2*3600),
             self.initial(),
             method="BDF",
-            rtol=1e-5,
-            atol=1e-8,
-            max_step=300,
-            events=event
+            rtol=1e-4,
+            atol=1e-7,
+            max_step=300
         )
 
         U=sol.y[:,-1].reshape(len(self.x),10)
@@ -185,12 +160,12 @@ class Model:
         O2=U[:,0]
         Glu=U[:,6]
 
-        JR=self.JR()*Glu/(Glu+self.Kg)*O2/(O2+self.Km)
-        JG=self.JG()*Glu/(Glu+self.Kg)
+        JR=self.JR_const*Glu/(Glu+self.Kg)*O2/(O2+self.Km)
+        JG=self.JG_const*Glu/(Glu+self.Kg)
 
         ATP=(3/self.R**3)*trapezoid((2*JG+30*JR)*(self.x**2),self.x)
 
-        return SimulationResult(self.x,U,ATP,True,sol.success)
+        return SimulationResult(self.x,U,ATP,sol.success)
 
 
 def diffusion_pdepe_profiles_python(**kwargs):
