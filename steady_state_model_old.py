@@ -87,8 +87,7 @@ class DiffusionSteadyStateModel:
     with a method-of-lines discretization and SciPy's stiff ODE solver.
     """
 
-    def __init__(
-        self,
+    def __init__(self,
         R: float,
         RR: float,
         GR: float,
@@ -98,6 +97,7 @@ class DiffusionSteadyStateModel:
         startHCO3: float,
         startGlucose: float,
         NHE: Any,
+        CA: float = 100.0,
         n_points: int = 500,
     ) -> None:
         if R <= 0:
@@ -124,7 +124,7 @@ class DiffusionSteadyStateModel:
         D_free = np.array([2600.0, 2100.0, 1300.0, 10.0, 1000.0, 1000.0, 960.0, 0.0, 0.0, 0.0])
         self.D = np.concatenate([D_free[:2], D_free[2:] * self.ve])
 
-        self.CA = 100.0
+        self.CA = float(CA)
         self.kh = 0.14
         self.kr = self.kh / (10.0 ** -6.1)
         self.kf = 1.0e6
@@ -315,6 +315,7 @@ class DiffusionSteadyStateModel:
                 "startGlucose": self.startGlucose,
                 "NHE": self.NHE,
                 "n_points": self.n_points,
+                "CA": self.CA,
             },
         )
 
@@ -329,6 +330,7 @@ def diffusion_pdepe_profiles_python(
     startHCO3: float,
     startGlucose: float,
     NHE: Any,
+    CA: float = 100.0,
     n_points: int = 500,
     t_final_s: float = 5.0 * 3600.0,
 ) -> dict[str, Any]:
@@ -343,6 +345,7 @@ def diffusion_pdepe_profiles_python(
         startHCO3=startHCO3,
         startGlucose=startGlucose,
         NHE=NHE,
+        CA=CA,
         n_points=n_points,
     )
     return model.solve(t_final_s=t_final_s).profiles()

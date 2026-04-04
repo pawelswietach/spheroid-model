@@ -26,24 +26,26 @@ startCO2 = st.sidebar.number_input("Bath CO2 (mM)", value=1.2)
 startHCO3 = st.sidebar.number_input("Bath HCO3 (mM)", value=24.0)
 startGlucose = st.sidebar.number_input("Bath Glucose (mM)", value=5.0)
 
-NHE = st.sidebar.radio("NHE", ["yes", "no"])
+CA = st.sidebar.number_input("Carbonic anhydrase (CA)", value=100, min_value=1)
 
+NHE = st.sidebar.radio("NHE", ["yes", "no"])
 n_points = st.sidebar.number_input("Radial mesh points", value=100)
 
 @st.cache_data
-def run_model(R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, n_points):
+def run_model(R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, CA, n_points):
     return diffusion_pdepe_profiles_python(
         R=R, RR=RR, GR=GR, ve=ve,
         startO2=startO2, startCO2=startCO2,
         startHCO3=startHCO3, startGlucose=startGlucose,
         NHE=NHE,
+        CA=CA,
         n_points=int(n_points)
     )
 
 if st.button("Solve"):
 
     with st.spinner("Solving steady state..."):
-        out = run_model(R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, n_points)
+        out = run_model(R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, CA, n_points)
 
     st.write(f"Solver success: {out.get('solver_success')}")
     st.write(f"Converged: {out.get('converged')}")
@@ -74,17 +76,26 @@ if st.button("Solve"):
     axs[0,2].plot(depth, df["CO2"], color="black")
     axs[0,3].plot(depth, df["Lactic acid"], color="black")
 
-    axs[1,0].plot(depth, df["HCO3e"], color="red")
-    axs[1,0].plot(depth, df["HCO3i"], color="blue")
+    axs[1,0].plot(depth, df["HCO3e"], color="red", label="Extracellular")
+    axs[1,0].plot(depth, df["HCO3i"], color="blue", label="Intracellular")
+    axs[1,0].set_title("Bicarbonate")
+    axs[1,0].legend()
 
-    axs[1,1].plot(depth, df["pHe"], color="red")
-    axs[1,1].plot(depth, df["pHi"], color="blue")
+    axs[1,1].plot(depth, df["pHe"], color="red", label="Extracellular")
+    axs[1,1].plot(depth, df["pHi"], color="blue", label="Intracellular")
+    axs[1,1].set_title("pH")
+    axs[1,1].legend()
 
-    axs[1,2].plot(depth, df["Lace"], color="red")
-    axs[1,2].plot(depth, df["Laci"], color="blue")
+    axs[1,2].plot(depth, df["Lace"], color="red", label="Extracellular")
+    axs[1,2].plot(depth, df["Laci"], color="blue", label="Intracellular")
+    axs[1,2].set_title("Lactate")
+    axs[1,2].legend()
 
-    axs[1,3].plot(df["O2"], df["pHe"], color="black")
+    axs[1,3].plot(df["O2"], df["pHe"], color="blue", label="pHe")
+    axs[1,3].plot(df["O2"], df["pHi"], color="red", label="pHi")
+    axs[1,3].set_title("pH vs O2")
     axs[1,3].set_xlabel("O2 (mM)")
+    axs[1,3].legend()
 
     for i, ax in enumerate(axs.flat):
         if i != 7:
