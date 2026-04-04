@@ -2,12 +2,10 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 
-
 def _parse_nhe(nhe):
     if isinstance(nhe, str):
         return 1.0 if nhe.lower() in ["yes","y","true","1"] else 0.0
     return float(nhe)
-
 
 class Model:
 
@@ -57,7 +55,8 @@ class Model:
 
     def initial(self):
         HCO3i = self.c_blood[1]*10**(7.2-6.1)
-        base = np.concatenate([self.c_blood,[HCO3i,10**-7.2,0]])
+        Hi0 = 10**-7.1  # FIX
+        base = np.concatenate([self.c_blood,[HCO3i,Hi0,0]])
         U = np.tile(base,(len(self.x),1))
         return U.ravel()
 
@@ -145,7 +144,6 @@ class Model:
             "Laci_mM": 1000*U[:,9],
             "success": sol.success
         }
-
 
 def diffusion_solver(**kwargs):
     return Model(**kwargs).solve()
