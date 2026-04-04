@@ -256,34 +256,34 @@ class DiffusionSteadyStateModel:
 
         return rhs.ravel()
 
-    def solve(
-        self,
-        t_final_s: float = 5.0 * 3600.0,
-        steady_tol: float = 1.0e-10,
-        rtol: float = 1.0e-6,
-        atol: float = 1.0e-10,
-        max_step: float = 300.0,
-    ) -> SimulationResult:
-        y0 = self.initial_state()
+def solve(
+    self,
+    t_final_s: float = 5.0 * 3600.0,
+    steady_tol: float = 1.0e-10,
+    rtol: float = 1.0e-5,
+    atol: float = 1.0e-8,
+    max_step: float = 300.0,
+) -> SimulationResult:
 
-        
-        def steady_event(t, y):
-            dudt = self.rhs(t, y)
-            return np.max(np.abs(dudt)) - steady_tol
+    y0 = self.initial_state()
 
-        steady_event.terminal = True
-        steady_event.direction = -1
+    def steady_event(t, y):
+        dudt = self.rhs(t, y)
+        return np.max(np.abs(dudt)) - steady_tol
 
-        sol = solve_ivp(
-            self.rhs,
-            t_span=(0.0, float(t_final_s)),
-            y0=y0,
-            method="BDF",
-            rtol=rtol,
-            atol=atol,
-            max_step=max_step,
-            events=steady_event,
-        )
+    steady_event.terminal = True
+    steady_event.direction = -1
+
+    sol = solve_ivp(
+        self.rhs,
+        t_span=(0.0, float(t_final_s)),
+        y0=y0,
+        method="BDF",
+        rtol=rtol,
+        atol=atol,
+        max_step=max_step,
+        events=steady_event,
+    )
 
         y_end = sol.y[:, -1]
         Uend = y_end.reshape(self.n_points, 10).copy()
