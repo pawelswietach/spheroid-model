@@ -68,18 +68,26 @@ if st.button("Solve"):
     axs[0,2].plot(depth,out["CO2_mM"],'k'); axs[0,2].set_title("CO2 (mM)")
     axs[0,3].plot(depth,1000*out["HLac_mM"],'k'); axs[0,3].set_title("Lactic acid (µM)")
 
-    axs[1,0].plot(depth,out["HCO3e_mM"],'r'); axs[1,0].plot(depth,out["HCO3i_mM"],'b')
+    axs[1,0].plot(depth, out["HCO3e_mM"], 'r', label="Extracellular")
+    axs[1,0].plot(depth, out["HCO3i_mM"], 'b', label="Intracellular")
     axs[1,0].set_title("Bicarbonate (mM)")
+    axs[1,0].legend()
 
-    axs[1,1].plot(depth,out["pHe"],'r'); axs[1,1].plot(depth,out["pHi"],'b')
+    axs[1,1].plot(depth, out["pHe"], 'r', label="Extracellular")
+    axs[1,1].plot(depth, out["pHi"], 'b', label="Intracellular")
     axs[1,1].set_title("pH")
+    axs[1,1].legend()
 
-    axs[1,2].plot(depth,out["Lace_mM"],'r'); axs[1,2].plot(depth,out["Laci_mM"],'b')
+    axs[1,2].plot(depth, out["Lace_mM"], 'r', label="Extracellular")
+    axs[1,2].plot(depth, out["Laci_mM"], 'b', label="Intracellular")
     axs[1,2].set_title("Lactate (mM)")
+    axs[1,2].legend()
 
-    axs[1,3].plot(out["O2_mM"],out["pHe"],'r'); axs[1,3].plot(out["O2_mM"],out["pHi"],'b')
+    axs[1,3].plot(out["O2_mM"], out["pHe"], 'r', label="Extracellular")
+    axs[1,3].plot(out["O2_mM"], out["pHi"], 'b', label="Intracellular")
     axs[1,3].set_title("pH vs O2")
     axs[1,3].set_xlabel("O2 (mM)")
+    axs[1,3].legend()
 
     for i, ax in enumerate(axs.flat):
         if i != 7:
