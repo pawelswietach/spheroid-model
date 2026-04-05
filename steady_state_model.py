@@ -18,6 +18,7 @@ class Model:
         self.NHE = _parse_nhe(NHE)
         self.CA = CA
 
+        self.pHi0 = pHi0
         self.Href = 10**(-pHi0)
 
         self.x = np.linspace(0, R, n_points)
@@ -56,8 +57,8 @@ class Model:
         self.c_vec = np.array([1,1,self.ve,self.ve,self.ve,1,1,self.vi,self.vi,self.vi])
 
     def initial(self):
-        HCO3i = self.c_blood[1]*10**(7.2-6.1)
-        Hi0 = self.Href
+        HCO3i = self.c_blood[1]*10**(self.pHi0-6.1)
+        Hi0 = 10**(-self.pHi0)
         base = np.concatenate([self.c_blood,[HCO3i,Hi0,0]])
         U = np.tile(base,(len(self.x),1))
         return U.ravel()

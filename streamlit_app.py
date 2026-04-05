@@ -47,6 +47,20 @@ if st.button("Solve"):
     x = out["x_um"]
     depth = R - x
 
+    df = pd.DataFrame({
+        "Radial depth (um)": depth,
+        "O2": out["O2_mM"],
+        "Glucose": out["Glu_mM"],
+        "CO2": out["CO2_mM"],
+        "Lactic acid": out["HLac_mM"],
+        "HCO3e": out["HCO3e_mM"],
+        "HCO3i": out["HCO3i_mM"],
+        "pHe": out["pHe"],
+        "pHi": out["pHi"],
+        "Lace": out["Lace_mM"],
+        "Laci": out["Laci_mM"],
+    })
+
     fig, axs = plt.subplots(2,4,figsize=(18,10))
 
     axs[0,0].plot(depth,out["O2_mM"],'k'); axs[0,0].set_title("O2 (mM)")
@@ -54,20 +68,35 @@ if st.button("Solve"):
     axs[0,2].plot(depth,out["CO2_mM"],'k'); axs[0,2].set_title("CO2 (mM)")
     axs[0,3].plot(depth,1000*out["HLac_mM"],'k'); axs[0,3].set_title("Lactic acid (µM)")
 
-    axs[1,0].plot(depth,out["HCO3e_mM"],'r',label="Extracellular")
-    axs[1,0].plot(depth,out["HCO3i_mM"],'b',label="Intracellular")
+    axs[1,0].plot(depth, out["HCO3e_mM"], 'r', label="Extracellular")
+    axs[1,0].plot(depth, out["HCO3i_mM"], 'b', label="Intracellular")
+    axs[1,0].set_title("Bicarbonate (mM)")
     axs[1,0].legend()
 
-    axs[1,1].plot(depth,out["pHe"],'r',label="Extracellular")
-    axs[1,1].plot(depth,out["pHi"],'b',label="Intracellular")
+    axs[1,1].plot(depth, out["pHe"], 'r', label="Extracellular")
+    axs[1,1].plot(depth, out["pHi"], 'b', label="Intracellular")
+    axs[1,1].set_title("pH")
     axs[1,1].legend()
 
-    axs[1,2].plot(depth,out["Lace_mM"],'r',label="Extracellular")
-    axs[1,2].plot(depth,out["Laci_mM"],'b',label="Intracellular")
+    axs[1,2].plot(depth, out["Lace_mM"], 'r', label="Extracellular")
+    axs[1,2].plot(depth, out["Laci_mM"], 'b', label="Intracellular")
+    axs[1,2].set_title("Lactate (mM)")
     axs[1,2].legend()
 
-    axs[1,3].plot(out["O2_mM"],out["pHe"],'r',label="Extracellular")
-    axs[1,3].plot(out["O2_mM"],out["pHi"],'b',label="Intracellular")
+    axs[1,3].plot(out["O2_mM"], out["pHe"], 'r', label="Extracellular")
+    axs[1,3].plot(out["O2_mM"], out["pHi"], 'b', label="Intracellular")
+    axs[1,3].set_title("pH vs O2")
+    axs[1,3].set_xlabel("O2 (mM)")
     axs[1,3].legend()
 
-    st.pyplot(fig)
+    for i, ax in enumerate(axs.flat):
+        if i != 7:
+            ax.set_xlabel("Radial depth (µm)")
+
+
+    plt.subplots_adjust(hspace=0.5)
+
+    st.pyplot(fig, use_container_width=True)
+
+    st.subheader("Spatial data")
+    st.dataframe(df, use_container_width=True)
