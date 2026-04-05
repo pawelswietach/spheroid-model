@@ -103,7 +103,10 @@ class Model:
         dU[-1,:] = 0
 
         rhs = (dU + s) / self.c_vec
-        rhs[-1,:7] = 0
+
+        # ✅ CORRECT boundary conditions
+        rhs[-1,:7] = (U[-1,:7] - self.c_blood) / self.c_vec[:7]
+        rhs[-1,7:] = (U[-1,7:] - U[-2,7:]) / self.dx
 
         return rhs.ravel()
 
