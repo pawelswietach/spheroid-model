@@ -1,3 +1,4 @@
+
 import numpy as np
 from scipy.integrate import solve_ivp
 
@@ -8,12 +9,16 @@ def _parse_nhe(nhe):
 
 class Model:
 
-    def __init__(self, R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose, NHE, n_points=50):
+    def __init__(self, R, RR, GR, ve, startO2, startCO2, startHCO3, startGlucose,
+                 NHE, CA=100, pHi0=7.2, n_points=50):
 
         self.R = R
         self.ve = ve
         self.vi = 1 - ve
         self.NHE = _parse_nhe(NHE)
+        self.CA = CA
+
+        self.Href = 10**(-pHi0)
 
         self.x = np.linspace(0, R, n_points)
         self.dx = self.x[1] - self.x[0]
@@ -24,7 +29,6 @@ class Model:
         D_free = np.array([2600,2100,1300,10,1000,1000,960,0,0,0])
         self.D = np.concatenate([D_free[:2], D_free[2:] * ve])
 
-        self.CA = 100
         self.kh = 0.14
         self.kr = self.kh/(10**-6.1)
         self.kf = 1e6
@@ -33,7 +37,6 @@ class Model:
         self.Km = 1e-6
         self.Kg = 1e-3
 
-        self.Href = 10**-7.2
         self.Knhe = 10**-6.5
 
         self.JR = (RR/1000)/60
@@ -54,7 +57,7 @@ class Model:
 
     def initial(self):
         HCO3i = self.c_blood[1]*10**(7.2-6.1)
-        Hi0 = 10**-7.1
+        Hi0 = self.Href
         base = np.concatenate([self.c_blood,[HCO3i,Hi0,0]])
         U = np.tile(base,(len(self.x),1))
         return U.ravel()
