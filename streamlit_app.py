@@ -20,7 +20,7 @@ st.markdown(
 
 st.sidebar.header("Inputs")
 
-R = st.sidebar.number_input("Radius (um)", value=100.0)
+R = st.sidebar.number_input("Radius (um)", value=200.0)
 RR = st.sidebar.number_input("Respiratory rate (mM/min)", value=1.0)
 GR = st.sidebar.number_input("Fermentative rate (mM/min)", value=1.0)
 ve = st.sidebar.number_input("Extracellular volume fraction", value=0.2)

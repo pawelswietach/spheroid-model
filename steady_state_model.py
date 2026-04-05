@@ -1,4 +1,3 @@
-
 import numpy as np
 from scipy.integrate import solve_ivp
 
@@ -55,7 +54,7 @@ class Model:
 
     def initial(self):
         HCO3i = self.c_blood[1]*10**(7.2-6.1)
-        Hi0 = 10**-7.1  # FIX
+        Hi0 = 10**-7.1
         base = np.concatenate([self.c_blood,[HCO3i,Hi0,0]])
         U = np.tile(base,(len(self.x),1))
         return U.ravel()
@@ -110,20 +109,31 @@ class Model:
 
     def steady_event(self, t, y):
         r = self.rhs(t, y)
-        return np.max(np.abs(r)) - 1e-6
+        return np.max(np.abs(r)) - 1e-7
 
     steady_event.terminal = True
     steady_event.direction = -1
 
     def solve(self):
 
+        atol_species = np.array([
+            1e-6,1e-6,1e-6,
+            1e-12,
+            1e-7,1e-7,
+            1e-6,1e-6,
+            1e-12,
+            1e-7
+        ])
+
+        atol = np.tile(atol_species, len(self.x))
+
         sol = solve_ivp(
             self.rhs,
             (0,1500),
             self.initial(),
             method="BDF",
-            rtol=1e-4,
-            atol=1e-7,
+            rtol=1e-5,
+            atol=atol,
             max_step=200,
             events=self.steady_event
         )
